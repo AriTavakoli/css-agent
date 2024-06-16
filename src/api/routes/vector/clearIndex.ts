@@ -1,8 +1,8 @@
 import express from 'express';
 import OpenAI from 'openai';
-import getCurrentWeather from '../../tools/functions/getWeather';
-import { availableFunctions, tools } from '../../tools/tools-index';
-import { defaultPrompt } from '../../prompts/prompt-index';
+import getCurrentWeather from '../../../tools/functions/getWeather';
+import { availableFunctions, tools } from '../../../tools/tools-index';
+import { defaultPrompt } from '../../../prompts/prompt-index';
 import { Pinecone } from '@pinecone-database/pinecone';
 
 const router = express.Router();

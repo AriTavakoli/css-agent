@@ -28,7 +28,7 @@ function logResults(
   console.log(" ");
   console.log(results);
   console.log(" ");
-  console.log(c[color](` ---------- [${contextLabel}] ---------- ` ));
+  console.log(c[color](` --- [${contextLabel} - END ] --- `));
   console.log(" ");
 }
 
@@ -42,17 +42,15 @@ function logInit(
   toolCalls?: ToolCall[],
   color: keyof typeof c = "yellowBright"
 ): void {
-  console.log(" ")
-  console.log(c[color](` ---------- [${contextLabel}] ---------- ` ));
-  console.log(" ")
+  console.log(" ");
+  console.log(c[color](` --- [${contextLabel} - INIT ] --- `));
+  console.log(" ");
 
   if (toolCalls && toolCalls.length > 0) {
     console.log(
       c[color](`[${contextLabel}] - tool calls:`),
       toolCalls?.map((tc) => tc.function.name)
     );
-  } else {
-    console.log(c[color](`[${contextLabel}] - tool calls:`), "None");
   }
 }
 

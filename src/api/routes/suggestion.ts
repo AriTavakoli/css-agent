@@ -3,7 +3,7 @@ import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import OpenAI from "openai";
 import { ChatCompletion } from "openai/resources";
-import { logInit } from "../../lib/logResults";
+import { logInit, logResults } from "../../lib/logger";
 import { Thread } from "../../lib/thread";
 import { editCss } from "../../tools/functions/css-properties";
 import { editInteractions } from "../../tools/functions/interaction-properties";

@@ -3,7 +3,7 @@ import { ChatCompletion } from "openai/resources";
 import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import { cssPropertyTools } from "./css-editing/css-tools-index";
-import { logInit, logResults } from "./logResults";
+import { logInit, logResults } from "./logger";
 import { editGrid } from "../tools/functions/style-tools/grid-properties";
 import { editShadow } from "../tools/functions/style-tools/shadow-properties";
 import * as c from "ansi-colors";

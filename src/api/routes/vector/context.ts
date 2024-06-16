@@ -1,5 +1,5 @@
 import express from "express";
-import { getContext } from "../../utils/context";
+import { getContext } from "../../../utils/context";
 import { ScoredPineconeRecord } from "@pinecone-database/pinecone";
 
 const router = express.Router();

@@ -4,7 +4,7 @@ import { ChatCompletion } from "openai/resources";
 import { cssPropertyTools } from "./css-tools-index";
 import { editGrid } from "../../tools/functions/style-tools/grid-properties";
 import { editShadow } from "../../tools/functions/style-tools/shadow-properties";
-import { logInit, logResults } from "../logResults";
+import { logInit, logResults } from "../logger";
 import { Thread } from "../thread";
 import { GridEditor } from "./grid-editor";
 import { ShadowEditor } from "./shadow-editor";
@@ -63,6 +63,7 @@ export class CssEditor {
         toolCalls?.map(async (toolCall) => {
           const functionName = toolCall.function.name;
 
+          this.thread.toolsUsed.push(functionName);
           const functionArgs = JSON.parse(toolCall.function.arguments);
 
           switch (functionName) {

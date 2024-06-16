@@ -5,7 +5,7 @@ import { Model } from "../../../api/routes/suggestion";
 import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import * as c from "ansi-colors";
-import { logResults } from "../../../lib/logResults";
+import { logResults } from "../../../lib/logger";
 
 export const editShadow = traceable(
   async ({ css, text }) => {

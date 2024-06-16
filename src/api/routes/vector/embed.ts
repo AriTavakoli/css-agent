@@ -4,9 +4,9 @@ import {
   createEmbedding,
   batchCreateEmbedding,
   createQueryEmbedding,
-} from "../../utils/create-embeddings";
-import { pineconeUpsert, batchPineconeUpsert } from "../../utils/upsert";
-import { StylesRecord, styles } from "../../data/elements-index";
+} from "../../../utils/create-embeddings";
+import { pineconeUpsert, batchPineconeUpsert } from "../../../utils/upsert";
+import { StylesRecord, styles } from "../../../data/elements-index";
 const router = express.Router();
 
 router.get("/", async (req, res) => {

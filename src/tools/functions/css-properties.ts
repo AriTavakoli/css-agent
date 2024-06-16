@@ -9,7 +9,7 @@ import { cssPropertyTools } from "../../lib/css-editing/css-tools-index";
 import { editGrid } from "./style-tools/grid-properties";
 import { editShadow } from "./style-tools/shadow-properties";
 import * as c from "ansi-colors";
-import { logInit, logResults } from "../../lib/logResults";
+import { logInit, logResults } from "../../lib/logger";
 
 export const editCss = async (args) => {
   const { css, text } = args;

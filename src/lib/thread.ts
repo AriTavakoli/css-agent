@@ -3,7 +3,7 @@ import { ChatCompletion } from "openai/resources";
 import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import { cssPropertyTools } from "./css-editing/css-tools-index";
-import { logInit, logResults } from "./logResults";
+import { logInit, logResults } from "./logger";
 import { editGrid } from "../tools/functions/style-tools/grid-properties";
 import { editShadow } from "../tools/functions/style-tools/shadow-properties";
 import * as c from "ansi-colors";
@@ -19,6 +19,7 @@ export class Thread {
     inputValue: string;
     minimalTreeStructure: any;
   };
+  toolsUsed: string[] = [];
 
   cssEditor: CssEditor;
   interactionEditor: InteractionEditor;
@@ -32,9 +33,8 @@ export class Thread {
 
   finalPipeline = traceable(
     async (results) => {
-      logInit("TRANSPILER", [], "greenBright");
-      console.log(c.greenBright("[TRANSPILER] - initiated"));
-      console.time(c.greenBright("[TRANSPILER] - execution time : "));
+      logInit("APPLY-STYLES", [], "greenBright");
+      console.time(c.greenBright("[APPLY-STYLES] - execution time : "));
       const res: ChatCompletion = await this.openai.chat.completions.create({
         model: "gpt-4o",
         response_format: { type: "json_object" },
@@ -65,14 +65,27 @@ export class Thread {
         ],
       });
 
-      console.timeEnd(c.greenBright("[TRANSPILER] - execution time : "));
-      logResults(res.choices[0].message?.content, "TRANSPILER", "greenBright");
+      console.timeEnd(c.greenBright("[APPLY-STYLES] - execution time : "));
+      logResults(
+        res.choices[0].message?.content,
+        "APPLY-STYLES",
+        "greenBright"
+      );
 
-      return res.choices[0].message?.content;
+      return this.extractResponse(res, "APPLY-STYLES");
     },
     {
-      name: "TRANSPILER",
+      name: "APPLY-STYLES",
       run_type: "llm",
     }
   );
+
+  extractResponse(response: any, functionName: string) {
+    if (response.choices[0] && response.choices[0].message) {
+      const jsonResponse = JSON.parse(response.choices[0].message.content);
+      return jsonResponse;
+    } else {
+      throw new Error(`No response from ${functionName}`);
+    }
+  }
 }

@@ -3,7 +3,7 @@ import { ChatCompletion } from "openai/resources";
 import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import { cssPropertyTools } from "./css-tools-index";
-import { logInit, logResults } from "../logResults";
+import { logInit, logResults } from "../logger";
 import { editGrid } from "../../tools/functions/style-tools/grid-properties";
 import { editShadow } from "../../tools/functions/style-tools/shadow-properties";
 import * as c from "ansi-colors";
@@ -17,10 +17,8 @@ export class GridEditor {
   constructor(thread: Thread) {
     this.thread = thread;
   }
-
   editGrid = traceable(
     async ({ css, text }) => {
-      // Retrieve context from your custom function, assuming it returns relevant information
       const context = (await getContext(
         text,
         0.7,
@@ -29,14 +27,12 @@ export class GridEditor {
 
       const metaDetas = context.map((c) => c.metadata);
 
-      const metaDataContent = metaDetas.map((c) => c.content);
+      // const metaDataContent = metaDetas.map((c) => c.content);
 
-      try {
-        // Create the message to send to OpenAI
-        const messages = [
-          {
-            role: "system",
-            content: `
+      const messages = [
+        {
+          role: "system",
+          content: `
             You are a css grid property modifier that modifies css in my custom format.
             Only include the grid properties.
             DO NOT use any syntax like brackets and selectors. The format I want you to respond is a format that strips down and class declarations and are only property declarations.
@@ -52,41 +48,28 @@ export class GridEditor {
               metaDetas
             )}".
             `,
-          },
-          {
-            role: "user",
-            content: text,
-          },
-        ];
-        console.log(c.magentaBright("[GRID-EDITOR] - initiated"));
-        console.time(c.magentaBright("[GRID-EDITOR] - execution time : "));
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ];
+      logInit("GRID-EDITOR", [], "magentaBright");
 
-        // Fetch the modified CSS from OpenAI
-        // Fetch the modified CSS from OpenAI
-        const response = await this.thread.openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: messages,
-          response_format: { type: "json_object" },
-        });
-        console.timeEnd(c.magentaBright("[GRID-EDITOR] - execution time : "));
-        console.log(" ");
-        console.log(c.magentaBright("-------- [GRID-EDITOR] ---------"));
-        console.log(" ");
-        console.log(response.choices[0].message.content);
-        console.log(" ");
-        console.log(c.magentaBright("-------- [GRID-EDITOR] ---------"));
-        console.log(" ");
-        // Assuming the response is correctly formatted as JSON
-        if (response.choices[0] && response.choices[0].message) {
-          const jsonResponse = JSON.parse(response.choices[0].message.content);
-          return jsonResponse; // Return the JSON response directly
-        } else {
-          throw new Error("Invalid response format from AI.");
-        }
-      } catch (error) {
-        console.error("Error processing CSS modification:", error);
-        throw new Error("Failed to modify CSS due to an internal error.");
-      }
+      const response = await this.thread.openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: messages,
+        response_format: { type: "json_object" },
+      });
+      console.timeEnd(c.magentaBright("[GRID-EDITOR] - execution time : "));
+      logResults(
+        response.choices[0].message?.content,
+        "GRID-EDITOR",
+        "magentaBright"
+      );
+
+      const result = this.thread.extractResponse(response, "[GRID-EDITOR]");
+      return result;
     },
     {
       name: "editGrid",
