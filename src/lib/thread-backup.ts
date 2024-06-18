@@ -22,6 +22,7 @@ export class Thread {
   toolsUsed: string[] = [];
   pipeline: RunTree;
 
+  observer: Observer;
   cssEditor: CssEditor;
   interactionEditor: InteractionEditor;
 
@@ -30,6 +31,7 @@ export class Thread {
     this.cssEditor = new CssEditor(this);
     this.interactionEditor = new InteractionEditor(this);
     this.userPayload = userPayload;
+    this.observer = new Observer();
   }
 
   invokeLLM = async (user_input: string) => {
@@ -40,17 +42,14 @@ export class Thread {
       toolCalls?.map(async (toolCall) => {
         const functionName = toolCall.function.name;
 
+        this.observer.eventEmitter.emit("functionCall", {
+          functionName: functionName,
+          status: "start",
+        });
         this.toolsUsed.push(functionName);
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
         switch (functionName) {
-          case "editInteractions":
-            const interactionResult =
-              await this.interactionEditor.editInteractions({
-                css: functionArgs.css,
-                text: functionArgs.text,
-              });
-            return interactionResult;
           case "editGrid":
             const gridResult = await this.cssEditor.gridEditor.editGrid({
               css: functionArgs.css,
@@ -123,6 +122,11 @@ export class Thread {
     logInit("APPLY-STYLES", [], "greenBright");
     console.time(c.greenBright("[APPLY-STYLES] - execution time : "));
 
+    this.observer.eventEmitter.emit("functionCall", {
+      functionName: "finalPipeline",
+      status: "start",
+    });
+
     const res: ChatCompletion = await this.openai.chat.completions.create({
       model: "gpt-4o",
       response_format: { type: "json_object" },
@@ -156,6 +160,12 @@ export class Thread {
     logResults(res.choices[0].message?.content, "APPLY-STYLES", "greenBright");
 
     console.log("\x1b[36mTools used: \x1b[36m", this.toolsUsed);
+    this.observer.eventEmitter.emit("functionComplete", {
+      functionName: "finalPipeline",
+      status: "complete",
+    });
+
+    this.observer.display();
 
     return res.choices[0].message?.content;
   };
@@ -170,6 +180,121 @@ export class Thread {
   }
 }
 
+class Node {
+  name: string;
+  children: Node[];
+  parent: Node | null;
+  status: string;
+  startTime: Date;
+  endTime?: Date;
+  error?: any;
+
+  constructor(name: string, parent: Node | null = null) {
+    this.name = name;
+    this.parent = parent;
+    this.children = [];
+    this.status = "pending";
+    this.startTime = new Date();
+  }
+
+  addChild(node: Node) {
+    node.parent = this;
+    this.children.push(node);
+  }
+
+  complete() {
+    this.status = "completed";
+    this.endTime = new Date();
+  }
+
+  fail(error: any) {
+    this.status = "failed";
+    this.endTime = new Date();
+    this.error = error;
+  }
+}
+
+class Observer {
+  root: Node;
+  currentNode: Node;
+  eventEmitter: EventEmitter;
+
+  constructor() {
+    this.eventEmitter = new EventEmitter();
+    this.root = new Node("root");
+    this.currentNode = this.root;
+    this.setupListeners();
+  }
+  setupListeners() {
+    this.eventEmitter.on("functionCall", (data) => {
+      this.handleFunctionCall(data);
+    });
+
+    this.eventEmitter.on("functionComplete", (data) => {
+      this.handleFunctionComplete(data);
+      this.updateRootStatus();
+    });
+
+    this.eventEmitter.on("functionError", (data) => {
+      this.handleFunctionError(data);
+      this.updateRootStatus();
+    });
+  }
+
+  handleFunctionCall(data) {
+    const newNode = new Node(data.functionName, this.currentNode);
+    this.currentNode.addChild(newNode);
+    this.currentNode = newNode; // Move down to the new node
+  }
+
+  handleFunctionComplete(data) {
+    if (this.currentNode.name === data.functionName) {
+      this.currentNode.complete();
+      if (this.currentNode.parent) {
+        this.currentNode = this.currentNode.parent; // Move up to the parent node
+      }
+    }
+  }
+
+  updateRootStatus() {
+    if (this.root.children.every((child) => child.status === "completed")) {
+      this.root.complete();
+    } else if (this.root.children.some((child) => child.status === "failed")) {
+      this.root.fail("One or more child nodes failed.");
+    }
+  }
+
+  handleFunctionError(data) {
+    if (this.currentNode.name === data.functionName) {
+      this.currentNode.fail(data.error);
+      if (this.currentNode.parent) {
+        this.currentNode = this.currentNode.parent; // Move up to the parent node
+      }
+    }
+  }
+  display(node = this.root, level = 1, prefix = "") {
+    const isLastChild =
+      node === node.parent?.children[node.parent.children.length - 1];
+    const connector = isLastChild ? "    -- " : "   |-- ";
+    const nextPrefix = isLastChild ? "       " : "   |   ";
+
+    let statusSymbol;
+    if (node.status === "completed") {
+      statusSymbol = "✓";
+    } else if (node.status === "failed") {
+      statusSymbol = "X";
+    } else {
+      statusSymbol = "?"; // Placeholder for pending or unspecified statuses
+    }
+
+    console.log(`${prefix}${connector}${node.name} (${statusSymbol})`);
+    console.log(`${prefix}${nextPrefix}`);
+
+    node.children.forEach((child, index) => {
+      this.display(child, level + 1, prefix + nextPrefix);
+    });
+  }
+}
 function constructQuery(text: string, css: string, variants: string) {
   let message = `I want you to take this css which is in the double brackets {{ ${css} }} and then modify it using the following text in double brackets: {{ ${text} }}.`;
   return message;
