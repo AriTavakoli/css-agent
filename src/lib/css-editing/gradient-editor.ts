@@ -12,24 +12,19 @@ export class GradientEditor {
     this.thread = thread;
   }
 
-  editGradient = traceable(
-    async ({ css, text }) => {
-      const context = (await getContext(
-        text,
-        0.7,
-        false
-      )) as ScoredPineconeRecord[];
+  async editGradient({ css, text }: { css: string; text: string }) {
+    const context: ScoredPineconeRecord[] = await getContext(text, 0.7, false);
 
-      // const metaDetas = context.map((c) => c.metadata);
+    const metaDetas = context.map((c) => c.metadata);
 
-      // const metaDataContent = metaDetas.map((c) => c.content);
+    const metaDataContent = metaDetas.map((c) => c.content);
 
-      // console.log("GRADIENT:", metaDataContent);
+    console.log("GRADIENT:", metaDataContent);
 
-      const messages = [
-        {
-          role: "system",
-          content: `
+    const messages = [
+      {
+        role: "system",
+        content: `
             You are a GRADIENT css property modifier that modifies css in my custom format.
             The css I provide you is the properties of the current class that I am editing.
             Only include the GRADIENT properties.
@@ -42,34 +37,33 @@ export class GradientEditor {
             }
             """
             Change the following element's css : """${css}"""  by following command : {"${text}"} . Do not just give me the standalone properties you just created. I rely on the previous properties for my class.
+          
+           Use this metadeta as reference for the properties and format. "${JSON.stringify(
+             metaDetas
+           )}".
             `,
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ];
-      logInit("GRADIENT-EDITOR", [], "cyanBright");
-      console.time(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
-      const response = await this.thread.openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: messages,
-        response_format: { type: "json_object" },
-      });
-      console.timeEnd(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
+      },
+      {
+        role: "user",
+        content: text,
+      },
+    ];
+    logInit("GRADIENT-EDITOR", [], "cyanBright");
+    console.time(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
+    const response = await this.thread.openai.chat.completions.create({
+      model: "gpt-3.5-turbo-1106",
+      messages: messages,
+      response_format: { type: "json_object" },
+    });
+    console.timeEnd(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
 
-      logResults(
-        response.choices[0].message?.content,
-        "GRADIENT-EDITOR",
-        "cyanBright"
-      );
-      // Assuming the response is correctly formatted as JSON
-      const result = this.thread.extractResponse(response, "[GRADIENT-EDITOR]");
-      return result;
-    },
-    {
-      name: "editGRADIENT",
-      run_type: "tool",
-    }
-  );
+    logResults(
+      response.choices[0].message?.content,
+      "GRADIENT-EDITOR",
+      "cyanBright"
+    );
+    // Assuming the response is correctly formatted as JSON
+    const result = this.thread.extractResponse(response, "[GRADIENT-EDITOR]");
+    return result;
+  }
 }

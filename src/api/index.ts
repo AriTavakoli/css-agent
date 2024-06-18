@@ -11,6 +11,7 @@ import agent from "./routes/multi-agent";
 import initializeAssistant from "./routes/assistants/initalize-assistants";
 import clearAssistants from "./routes/assistants/clear-assistants";
 import listAssistants from "./routes/assistants/list-assistants";
+import predictions from "./routes/predictions";
 const router = express.Router();
 // router.use('/suggestions', temp)
 router.use("/suggestions", suggestions);
@@ -20,10 +21,10 @@ router.use("/embedding", embedding);
 router.use("/generate-data", generate);
 router.use("/graph", graph);
 router.use("/agent", agent);
-router.use('/assistant', assistant);
-router.use('/initialize-assistants', initializeAssistant);
-router.use('/clear-assistants', clearAssistants);
-router.use('/list-assistants', listAssistants);
-
+router.use("/assistant", assistant);
+router.use("/initialize-assistants", initializeAssistant);
+router.use("/clear-assistants", clearAssistants);
+router.use("/list-assistants", listAssistants);
+router.use("/predictions", predictions);
 
 export default router;

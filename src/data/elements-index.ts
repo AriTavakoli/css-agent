@@ -1,3 +1,4 @@
+import { gradientStyles } from "./gradient";
 import { gridStyles } from "./grid";
 
 export type StylesRecord = {
@@ -13,6 +14,7 @@ export type StylesRecord = {
 
 const styles: StylesRecord[] = [
   ...gridStyles,
+  ...gradientStyles,
   {
     id: "border-style",
     styleLess: `border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: hsla(212.00000000000006, 38.46%, 92.35%, 1.00); background-color: hsla(216, 33.33%, 97.06%, 1.00);`,

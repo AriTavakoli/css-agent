@@ -1,15 +1,13 @@
 import * as c from "ansi-colors";
-import { traceable } from "langsmith/traceable";
 import { ChatCompletion } from "openai/resources";
-import { cssPropertyTools } from "./css-tools-index";
-import { editGrid } from "../../tools/functions/style-tools/grid-properties";
-import { editShadow } from "../../tools/functions/style-tools/shadow-properties";
 import { logInit, logResults } from "../logger";
 import { Thread } from "../thread";
-import { GridEditor } from "./grid-editor";
-import { ShadowEditor } from "./shadow-editor";
-import { PositionEditor } from "./position-editor";
+import { cssPropertyTools } from "./css-tools-index";
 import { GradientEditor } from "./gradient-editor";
+import { GridEditor } from "./grid-editor";
+import { PositionEditor } from "./position-editor";
+import { ShadowEditor } from "./shadow-editor";
+import { SpacingEditor } from "./spacing-editor";
 
 export class CssEditor {
   thread: Thread;
@@ -17,16 +15,22 @@ export class CssEditor {
   shadowEditor: ShadowEditor;
   positionEditor: PositionEditor;
   gradientEditor: GradientEditor;
-  constructor(thread: Thread) {
-    this.thread = thread;
-    this.gridEditor = new GridEditor(thread);
-    this.shadowEditor = new ShadowEditor(thread);
-    this.positionEditor = new PositionEditor(thread);
-    this.gradientEditor = new GradientEditor(thread);
+  spacingEditor: SpacingEditor;
+  constructor(rootThreadInstance: Thread) {
+    this.thread = rootThreadInstance;
+    this.gridEditor = new GridEditor(rootThreadInstance);
+    this.shadowEditor = new ShadowEditor(rootThreadInstance);
+    this.positionEditor = new PositionEditor(rootThreadInstance);
+    this.gradientEditor = new GradientEditor(rootThreadInstance);
+    this.spacingEditor = new SpacingEditor(rootThreadInstance);
   }
 
   async editCss({ css, text }) {
-    const pipeline = traceable(async (user_input) => {
+    // const childRun = this.thread.pipeline.createChild({
+    //   name: "EDIT-CSS-TOOL",
+    //   inputs: {},
+    // });
+    const invokeLLM = async (user_input) => {
       const res: ChatCompletion =
         await this.thread.openai.chat.completions.create({
           model: "gpt-4o",
@@ -49,44 +53,93 @@ export class CssEditor {
           response_format: { type: "json_object" },
           tool_choice: "required",
         });
+      // childRun.end({ result: res.choices[0].message?.tool_calls });
+      // await childRun.postRun();
       return res.choices[0].message?.tool_calls;
-    });
+    };
 
     try {
-      const response = await pipeline(text);
+      const response = await invokeLLM(text);
       const toolCalls = response;
 
       logInit("CSS-EDITOR", toolCalls, "yellow");
       console.time(c.yellow("[CSS-EDITOR] - execution time : "));
 
+      this.thread.observer.eventEmitter.emit("functionCall", {
+        functionName: "CSS-EDITOR",
+        status: "start",
+      });
+
       const results = await Promise.all(
         toolCalls?.map(async (toolCall) => {
           const functionName = toolCall.function.name;
 
+          this.thread.observer.eventEmitter.emit("functionCall", {
+            functionName: functionName,
+            status: "start",
+          });
           this.thread.toolsUsed.push(functionName);
           const functionArgs = JSON.parse(toolCall.function.arguments);
 
           switch (functionName) {
             case "editGrid":
-              return this.thread.cssEditor.gridEditor.editGrid({
-                css: functionArgs.css,
-                text: functionArgs.text,
+              const gridResult =
+                await this.thread.cssEditor.gridEditor.editGrid({
+                  css: functionArgs.css,
+                  text: functionArgs.text,
+                });
+
+              this.thread.observer.eventEmitter.emit("functionComplete", {
+                functionName: functionName,
+                status: "complete",
               });
+              return gridResult;
             case "editShadow":
-              return this.thread.cssEditor.shadowEditor.editShadow({
-                css: functionArgs.css,
-                text: functionArgs.text,
+              const shadowResult =
+                await this.thread.cssEditor.shadowEditor.editShadow({
+                  css: functionArgs.css,
+                  text: functionArgs.text,
+                });
+              this.thread.observer.eventEmitter.emit("functionComplete", {
+                functionName: functionName,
+                status: "complete",
               });
+              return shadowResult;
             case "editGradient":
-              return this.thread.cssEditor.gradientEditor.editGradient({
-                css: functionArgs.css,
-                text: functionArgs.text,
+              const gradientResult =
+                await this.thread.cssEditor.gradientEditor.editGradient({
+                  css: functionArgs.css,
+                  text: functionArgs.text,
+                });
+              this.thread.observer.eventEmitter.emit("functionComplete", {
+                functionName: functionName,
+                status: "complete",
               });
+
+              return gradientResult;
             case "editPosition":
-              return this.thread.cssEditor.positionEditor.editPosition({
-                css: functionArgs.css,
-                text: functionArgs.text,
+              const positionResult =
+                await this.thread.cssEditor.positionEditor.editPosition({
+                  css: functionArgs.css,
+                  text: functionArgs.text,
+                });
+              this.thread.observer.eventEmitter.emit("functionComplete", {
+                functionName: functionName,
+                status: "complete",
               });
+              return positionResult;
+
+            case "editSpacing":
+              const spacingResult =
+                await this.thread.cssEditor.spacingEditor.editSpacing({
+                  css: functionArgs.css,
+                  text: functionArgs.text,
+                });
+              this.thread.observer.eventEmitter.emit("functionComplete", {
+                functionName: functionName,
+                status: "complete",
+              });
+              return spacingResult;
             default:
               throw new Error(`Function ${functionName} not found.`);
           }
@@ -95,6 +148,10 @@ export class CssEditor {
       console.timeEnd(c.yellow("[CSS-EDITOR] - execution time : "));
       logResults(results, "CSS-EDITOR", "yellow");
 
+      this.thread.observer.eventEmitter.emit("functionComplete", {
+        functionName: "CSS-EDITOR",
+        status: "complete",
+      });
       return results;
     } catch (error) {
       console.error("Error processing CSS edits:", error);

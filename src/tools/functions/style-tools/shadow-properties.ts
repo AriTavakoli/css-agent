@@ -82,6 +82,6 @@ export const editShadow = traceable(
   },
   {
     name: "editShadow",
-    run_type: "tool",
+    run_type: "llm",
   }
 );

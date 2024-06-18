@@ -91,6 +91,29 @@ const cssPropertyTools: ChatCompletionTool[] = [
       },
     },
   },
+
+  {
+    type: "function",
+    function: {
+      name: "editSpacing",
+      description: `
+     a css editor tool that deals with spacing only.`,
+      parameters: {
+        type: "object",
+        properties: {
+          css: {
+            type: "string",
+            description: "The CSS to be modified",
+          },
+          text: {
+            type: "string",
+            description: "Instructions on how to modify the css spacing",
+          },
+        },
+        required: ["css", "text"],
+      },
+    },
+  },
 ];
 
 export { cssPropertyTools };

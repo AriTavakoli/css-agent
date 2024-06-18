@@ -38,53 +38,31 @@ router.post<{}>("/", async (req, res) => {
   const css = currentStyleBlock.styleLess;
   const variants = currentStyleBlock.variants;
 
-  const chatRequest = traceable(async (user_input) => {
-    const res: ChatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `
-          You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query. 
-          Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not. 
-           `,
-        },
-        {
-          role: "user",
-          content: constructQuery(user_input, css, variants),
-        },
-      ],
-      tools: tools,
-      tool_choice: "auto",
-    });
-    return res.choices[0].message?.tool_calls;
-  });
+  // const chatRequest = async (user_input) => {
+  //   console.log(c.bgRed("INITIATING CHAT REQUEST"))
+  //   const res: ChatCompletion = await openai.chat.completions.create({
+  //     model: "gpt-3.5-turbo-0125",
+  //     messages: [
+  //       {
+  //         role: "system",
+  //         content: `
+  //         You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query. 
+  //         Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not. 
+  //          `,
+  //       },
+  //       {
+  //         role: "user",
+  //         content: constructQuery(user_input, css, variants),
+  //       },
+  //     ],
+  //     tools: tools,
+  //     tool_choice: "required",
+  //   });
+  //   return res.choices[0].message?.tool_calls;
+  // };
 
   try {
-    const toolCalls = await chatRequest(text);
-
-    logInit("DELEGATOR", toolCalls, "blueBright");
-
-    const results = await Promise?.all(
-      toolCalls?.map(async (toolCall) => {
-        const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        switch (functionName) {
-          case "editCss":
-            return await thread.cssEditor.editCss({
-              css: functionArgs.css,
-              text: functionArgs.text,
-            });
-          case "editInteractions":
-            return await thread.interactionEditor.editInteractions({
-              variants: functionArgs.variants,
-              text: functionArgs.text,
-            });
-          default:
-            throw new Error(`Function ${functionName} not found.`);
-        }
-      })
-    );
+    const results = await thread.invokeLLM(text);
 
     const finalResult = await thread.finalPipeline(results);
 

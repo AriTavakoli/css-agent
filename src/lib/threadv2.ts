@@ -7,7 +7,11 @@ import { InteractionEditor } from "./interaction-editor";
 import { logInit, logResults } from "./logger";
 import { RunTree } from "langsmith";
 import EventEmitter from "events";
-import { tools } from "../tools/tools-index";
+import { GridEditor } from "./css-editing/grid-editor";
+import { ShadowEditor } from "./css-editing/shadow-editor";
+import { PositionEditor } from "./css-editing/position-editor";
+import { GradientEditor } from "./css-editing/gradient-editor";
+import { SpacingEditor } from "./css-editing/spacing-editor";
 
 export class Thread {
   openai: OpenAI;
@@ -20,6 +24,11 @@ export class Thread {
   };
   toolsUsed: string[] = [];
   pipeline: RunTree;
+  gridEditor: GridEditor;
+  shadowEditor: ShadowEditor;
+  positionEditor: PositionEditor;
+  gradientEditor: GradientEditor;
+  spacingEditor: SpacingEditor;
 
   observer: Observer;
   cssEditor: CssEditor;
@@ -27,65 +36,16 @@ export class Thread {
 
   constructor({ openai, userPayload }: { openai: OpenAI; userPayload: any }) {
     this.openai = openai;
-    this.cssEditor = new CssEditor(this);
-    this.interactionEditor = new InteractionEditor(this);
+    // this.cssEditor = new CssEditor(this);
+    // this.interactionEditor = new InteractionEditor(this);
     this.userPayload = userPayload;
     this.observer = new Observer();
+    this.gridEditor = new GridEditor(this);
+    this.shadowEditor = new ShadowEditor(this);
+    this.positionEditor = new PositionEditor(this);
+    this.gradientEditor = new GradientEditor(this);
+    this.spacingEditor = new SpacingEditor(this);
   }
-
-  invokeLLM = async (user_input) => {
-    const toolCalls = await this.chatRequest(user_input);
-
-    logInit("DELEGATOR", toolCalls, "blueBright");
-    const results = await Promise?.all(
-      toolCalls?.map(async (toolCall) => {
-        const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
-        switch (functionName) {
-          case "editCss":
-            return await this.cssEditor.editCss({
-              css: functionArgs.css,
-              text: functionArgs.text,
-            });
-          case "editInteractions":
-            return await this.interactionEditor.editInteractions({
-              variants: functionArgs.variants,
-              text: functionArgs.text,
-            });
-          default:
-            throw new Error(`Function ${functionName} not found.`);
-        }
-      })
-    );
-    return results;
-  };
-
-  chatRequest = async (user_input) => {
-    console.log(c.bgRed("INITIATING CHAT REQUEST"));
-    const res: ChatCompletion = await this.openai.chat.completions.create({
-      model: "gpt-3.5-turbo-0125",
-      messages: [
-        {
-          role: "system",
-          content: `
-          You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query. 
-          Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not. 
-           `,
-        },
-        {
-          role: "user",
-          content: constructQuery(
-            user_input,
-            this.userPayload.currentStyleBlock.styleLess,
-            this.userPayload.currentStyleBlock.variants
-          ),
-        },
-      ],
-      tools: tools,
-      tool_choice: "required",
-    });
-    return res.choices[0].message?.tool_calls;
-  };
 
   finalPipeline = async (results: any[]) => {
     logInit("APPLY-STYLES", [], "greenBright");
@@ -263,8 +223,4 @@ class Observer {
       this.display(child, level + 1, prefix + nextPrefix);
     });
   }
-}
-function constructQuery(text: string, css: string, variants: string) {
-  let message = `I want you to take this css which is in the double brackets {{ ${css} }} and then modify it using the following text in double brackets: {{ ${text} }}.`;
-  return message;
 }

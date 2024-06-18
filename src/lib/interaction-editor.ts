@@ -25,52 +25,44 @@ export class InteractionEditor {
     )) as ScoredPineconeRecord[];
     const { content } = context[0].metadata;
 
-    try {
-      // Create the message to send to OpenAI
-      const messages = [
-        {
-          role: "system",
-          content: `
-          You are a property modifier. You have to modify the following css properties in the exact format i provide you. Response in JSON format only,
-          The goal is to modify + add the relevant properties not replace. You will need to provide comprehensive when you give me css properties. Dont leave out properties that are needed for the css to work. For example if I ask you to make a hover modification.
-  
-          only response to me in JSON format. The json format I want always is in variants and the properties are always ['main_hover', 'main_focus']
-          """
-          {
+    // Create the message to send to OpenAI
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are a interaction property modifier. You have to modify the following css properties in the exact format I provide you" +
+          "Only respond in JSON format." +
+          "You will need to be comprehensive when you give me css properties." +
+          "Don't leave out properties that are needed for the css to work." +
+          "You will need to think about what is the best way to solve the user's query and provide the best solution." +
+          "Think about it first before you respond." +
+          "only response to me in JSON format. The json format I want always is in variants and the properties are always ['main_hover', 'main_focus']" +
+          `{
             "variants": {
               "main_hover": "background-color: red;",
               "main_focus": "border: 1px solid red;",
               }
           }
-          """
-          Change the following CSS "${variants}" as described: "${text}". Reference CSS: "${content}".`,
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ];
+          Change the following CSS that is delimited by triple quotes """${variants}"""
+          Follow this command that is delimited by quadruple quotes """"${text}"""".
+          Here is reference css in the following brackets <${content}>`,
+      },
+      {
+        role: "user",
+        content: text,
+      },
+    ];
 
-      // Fetch the modified CSS from OpenAI
-      const response = await this.thread.openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: messages,
-        response_format: { type: "json_object" },
-      });
-
-      if (response.choices[0] && response.choices[0].message) {
-        const jsonResponse = JSON.parse(response.choices[0].message.content);
-        console.log(
-          "\x1b[35m [INTERACTION-TOOL] - final response: \x1b[35m",
-          jsonResponse
-        );
-        return jsonResponse; // Return the JSON response directly
-      } else {
-        throw new Error("Invalid response format from AI.");
-      }
-    } catch (error) {
-      console.error("Error processing CSS modification:", error);
-      throw new Error("Failed to modify CSS due to an internal error.");
-    }
+    // Fetch the modified CSS from OpenAI
+    const response = await this.thread.openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: messages,
+      response_format: { type: "json_object" },
+    });
+    const result = this.thread.extractResponse(
+      response,
+      "[INTERACTION-EDITOR]"
+    );
+    return result;
   });
 }

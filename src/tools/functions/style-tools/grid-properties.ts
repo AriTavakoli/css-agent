@@ -82,6 +82,6 @@ export const editGrid = traceable(
   },
   {
     name: "editGrid",
-    run_type: "tool",
+    run_type: "llm",
   }
 );

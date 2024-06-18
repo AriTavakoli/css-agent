@@ -1,15 +1,9 @@
-import OpenAI from "openai";
-import { ChatCompletion } from "openai/resources";
-import { traceable } from "langsmith/traceable";
-import { wrapOpenAI } from "langsmith/wrappers";
-import { cssPropertyTools } from "./css-tools-index";
-import { logInit, logResults } from "../logger";
-import { editGrid } from "../../tools/functions/style-tools/grid-properties";
-import { editShadow } from "../../tools/functions/style-tools/shadow-properties";
-import * as c from "ansi-colors";
-import { Thread } from "../thread";
-import { getContext } from "../../utils/context";
 import { ScoredPineconeRecord } from "@pinecone-database/pinecone";
+import * as c from "ansi-colors";
+import { traceable } from "langsmith/traceable";
+import { getContext } from "../../utils/context";
+import { logResults } from "../logger";
+import { Thread } from "../thread";
 
 export class ShadowEditor {
   thread: Thread;
@@ -18,24 +12,22 @@ export class ShadowEditor {
     this.thread = thread;
   }
 
-  editShadow = traceable(
-    async ({ css, text }) => {
-      // Retrieve context from your custom function, assuming it returns relevant information
-      const context = (await getContext(
-        text,
-        0.7,
-        false
-      )) as ScoredPineconeRecord[];
+  editShadow = async ({ css, text }) => {
+    const context = (await getContext(
+      text,
+      0.7,
+      false
+    )) as ScoredPineconeRecord[];
 
-      const metaDetas = context.map((c) => c.metadata);
+    const metaDetas = context.map((c) => c.metadata);
 
-      const metaDataContent = metaDetas.map((c) => c.content);
-      // console.log("Shadow:", metaDataContent);
+    const metaDataContent = metaDetas.map((c) => c.content);
+    // console.log("Shadow:", metaDataContent);
 
-      const messages = [
-        {
-          role: "system",
-          content: `
+    const messages = [
+      {
+        role: "system",
+        content: `
             You are a shadow css property modifier that modifies css in my custom format.
             The css I provide you is the properties of the current class that I am editing.
             Only include the shadow properties.
@@ -48,38 +40,30 @@ export class ShadowEditor {
             }
             """
             Change the following element's css : """${css}"""  by following command : {"${text}"} . Do not just give me the standalone properties you just created. I rely on the previous properties for my class.
-            Use this metadeta as reference for the properties and format. "${JSON.stringify(
-              metaDetas
-            )}".
+            Use this metadeta as reference for the properties and format : 
+            "${JSON.stringify(metaDetas)}".
             `,
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ];
-      console.log(c.redBright("[SHADOW-EDITOR] - initiated"));
-      console.time(c.redBright("[SHADOW-EDITOR] - execution time : "));
-      // Fetch the modified CSS from OpenAI
-      // Fetch the modified CSS from OpenAI
-      const response = await this.thread.openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: messages,
-        response_format: { type: "json_object" },
-      });
-      console.timeEnd(c.redBright("[SHADOW-EDITOR] - execution time : "));
+      },
+      {
+        role: "user",
+        content: text,
+      },
+    ];
+    console.log(c.redBright("[SHADOW-EDITOR] - initiated"));
+    console.time(c.redBright("[SHADOW-EDITOR] - execution time : "));
+    const response = await this.thread.openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: messages,
+      response_format: { type: "json_object" },
+    });
+    console.timeEnd(c.redBright("[SHADOW-EDITOR] - execution time : "));
 
-      logResults(
-        response.choices[0].message?.content,
-        "SHADOW-EDITOR",
-        "redBright"
-      );
-      const result = this.thread.extractResponse(response, "[SHADOW-EDITOR]");
-      return result;
-    },
-    {
-      name: "editShadow",
-      run_type: "tool",
-    }
-  );
+    logResults(
+      response.choices[0].message?.content,
+      "SHADOW-EDITOR",
+      "redBright"
+    );
+    const result = this.thread.extractResponse(response, "[SHADOW-EDITOR]");
+    return result;
+  };
 }
