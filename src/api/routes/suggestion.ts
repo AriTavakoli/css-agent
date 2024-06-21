@@ -33,6 +33,7 @@ router.post<{}>("/", async (req, res) => {
     },
   });
 
+
   console.clear();
 
   const css = currentStyleBlock.styleLess;
@@ -46,8 +47,8 @@ router.post<{}>("/", async (req, res) => {
   //       {
   //         role: "system",
   //         content: `
-  //         You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query. 
-  //         Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not. 
+  //         You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query.
+  //         Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not.
   //          `,
   //       },
   //       {
