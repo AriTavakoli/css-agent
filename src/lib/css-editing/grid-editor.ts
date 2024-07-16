@@ -1,8 +1,9 @@
 import { ScoredPineconeRecord } from "@pinecone-database/pinecone";
 import * as c from "ansi-colors";
 import { getContext } from "../../utils/context";
-import { logInit, logResults } from "../logger";
+import { logInit, logResults, logResultsChild } from "../logger";
 import { Thread } from "../thread";
+import { traceable } from "langsmith/traceable";
 
 export class GridEditor {
   thread: Thread;
@@ -10,21 +11,22 @@ export class GridEditor {
   constructor(rootThreadInstance: Thread) {
     this.thread = rootThreadInstance;
   }
-  async editGrid({ css, text }) {
-    const context = (await getContext(
-      text,
-      0.7,
-      false
-    )) as ScoredPineconeRecord[];
+  editGrid = traceable(
+    async ({ css, text }) => {
+      const context = (await getContext(
+        text,
+        0.7,
+        false
+      )) as ScoredPineconeRecord[];
 
-    const metaDetas = context.map((c) => c.metadata);
+      const metaDetas = context.map((c) => c.metadata);
 
-    // const metaDataContent = metaDetas.map((c) => c.content);
+      // const metaDataContent = metaDetas.map((c) => c.content);
 
-    const messages = [
-      {
-        role: "system",
-        content: `
+      const messages = [
+        {
+          role: "system",
+          content: `
             You are a css grid property modifier that modifies css in my custom format.
             Only include the grid properties.
             DO NOT use any syntax like brackets and selectors. The format I want you to respond is a format that strips down and class declarations and are only property declarations.
@@ -43,28 +45,37 @@ export class GridEditor {
               metaDetas
             )}".
             `,
-      },
-      {
-        role: "user",
-        content: text,
-      },
-    ];
-    logInit("GRID-EDITOR", [], "magentaBright");
-    console.time(c.magentaBright("[GRID-EDITOR] - execution time : "));
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ];
+      logInit("GRID-EDITOR", [], "magentaBright");
+      console.time(c.magentaBright("[GRID-EDITOR] - execution time : "));
 
-    const response = await this.thread.openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: messages,
-      response_format: { type: "json_object" },
-    });
-    console.timeEnd(c.magentaBright("[GRID-EDITOR] - execution time : "));
-    logResults(
-      response.choices[0].message?.content,
-      "GRID-EDITOR",
-      "magentaBright"
-    );
+      const response = await this.thread.openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: messages,
+        response_format: { type: "json_object" },
+      });
+      console.timeEnd(c.magentaBright("[GRID-EDITOR] - execution time : "));
+      logResultsChild(
+        response.choices[0].message?.content,
+        "GRID-EDITOR",
+        "magentaBright"
+      );
 
-    const result = this.thread.extractResponse(response, "[GRID-EDITOR]");
-    return result;
-  }
+      const result = this.thread.extractResponse(response, "[GRID-EDITOR]");
+      return result;
+    },
+    {
+      name: "editGrid",
+      tags: ["editGrid"],
+      metadata: {
+        tool: "editGrid",
+      },
+      parent_run_id: "root",
+    }
+  );
 }

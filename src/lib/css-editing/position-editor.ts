@@ -31,6 +31,7 @@ export class PositionEditor {
         content: `
             You are a POSITION css property modifier that modifies css in my custom format.
             The css I provide you is the properties of the current class that I am editing.
+            I want you to modify the element's css so that it follows the users query. I will sometimes as you to manipulate the current element but specifically to modify the position of the children. 
             Only include the POSITION properties.
              DO NOT use any syntax like brackets and selectors. The format I want you to respond is a format that strips down and class declarations and are only property declarations.
             response in json format only. 

@@ -2,7 +2,7 @@ import { ScoredPineconeRecord } from "@pinecone-database/pinecone";
 import * as c from "ansi-colors";
 import { traceable } from "langsmith/traceable";
 import { getContext } from "../../utils/context";
-import { logInit, logResults } from "../logger";
+import { logInitChild, logResultsChild } from "../logger";
 import { Thread } from "../thread";
 
 export class SpacingEditor {
@@ -36,7 +36,7 @@ export class SpacingEditor {
         content: text,
       },
     ];
-    logInit("SPACING-EDITOR", [], "cyanBright");
+    logInitChild("SPACING-EDITOR", [], "cyanBright");
     console.time(c.cyanBright("[SPACING-EDITOR] - execution time : "));
     const response = await this.thread.openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -45,7 +45,7 @@ export class SpacingEditor {
     });
     console.timeEnd(c.cyanBright("[SPACING-EDITOR] - execution time : "));
 
-    logResults(
+    logResultsChild(
       response.choices[0].message?.content,
       "SPACING-EDITOR",
       "cyanBright"

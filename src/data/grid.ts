@@ -3,12 +3,15 @@ import type { StylesRecord } from "./elements-index";
 export const gridStyles: StylesRecord[] = [
   {
     id: "grid-layout-4-columns",
-    styleLess: `display: grid; grid-auto-columns: 1fr; grid-column-gap: 16px; grid-row-gap: 16px; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: auto auto;`,
+    styleLess: `a 4x3 grid where the top and bottom row span all 4 columns`,
     metadata: {
       description: "A grid layout with 4 columns",
       category: "Layout",
       subcategory: "Grid",
-      content: `display: grid; grid-auto-columns: 1fr; grid-column-gap: 16px; grid-row-gap: 16px; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: auto auto;`,
+      content: `display: grid; margin-top: 11px; grid-auto-columns: 1fr; grid-column-gap: 16px; grid-row-gap: 16px; grid-template-areas: "Area Area Area Area"
+". . . ."
+". . . ."
+"Area-2 Area-2 Area-2 Area-2"; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: auto auto auto auto; grid-area: 1 / 1 / 2 / 5;`,
     },
   },
   {

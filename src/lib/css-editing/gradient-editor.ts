@@ -2,7 +2,7 @@ import { ScoredPineconeRecord } from "@pinecone-database/pinecone";
 import * as c from "ansi-colors";
 import { traceable } from "langsmith/traceable";
 import { getContext } from "../../utils/context";
-import { logInit, logResults } from "../logger";
+import { logInitChild, logResultsChild } from "../logger";
 import { Thread } from "../thread";
 
 export class GradientEditor {
@@ -48,7 +48,7 @@ export class GradientEditor {
         content: text,
       },
     ];
-    logInit("GRADIENT-EDITOR", [], "cyanBright");
+    logInitChild("GRADIENT-EDITOR", [], "cyanBright");
     console.time(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
     const response = await this.thread.openai.chat.completions.create({
       model: "gpt-3.5-turbo-1106",
@@ -57,7 +57,7 @@ export class GradientEditor {
     });
     console.timeEnd(c.cyanBright("[GRADIENT-EDITOR] - execution time : "));
 
-    logResults(
+    logResultsChild(
       response.choices[0].message?.content,
       "GRADIENT-EDITOR",
       "cyanBright"

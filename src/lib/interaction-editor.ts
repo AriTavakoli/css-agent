@@ -16,7 +16,13 @@ export class InteractionEditor {
   constructor(thread: Thread) {
     this.thread = thread;
   }
-  editInteractions = traceable(async ({ variants, text }) => {
+  async editInteractions({
+    variants,
+    text,
+  }: {
+    variants: string;
+    text: string;
+  }) {
     // Retrieve context from your custom function, assuming it returns relevant information
     const context = (await getContext(
       text,
@@ -64,5 +70,5 @@ export class InteractionEditor {
       "[INTERACTION-EDITOR]"
     );
     return result;
-  });
+  }
 }
