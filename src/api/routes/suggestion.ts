@@ -1,14 +1,8 @@
+import * as c from "ansi-colors";
 import express from "express";
-import { traceable } from "langsmith/traceable";
 import { wrapOpenAI } from "langsmith/wrappers";
 import OpenAI from "openai";
-import { ChatCompletion } from "openai/resources";
-import { logInit, logResults } from "../../lib/logger";
 import { Thread } from "../../lib/thread";
-import { editCss } from "../../tools/functions/css-properties";
-import { editInteractions } from "../../tools/functions/interaction-properties";
-import { tools } from "../../tools/tools-index";
-import * as c from "ansi-colors";
 
 const router = express.Router();
 
@@ -32,36 +26,6 @@ router.post<{}>("/", async (req, res) => {
       minimalTreeStructure,
     },
   });
-
-
-  console.clear();
-
-  const css = currentStyleBlock.styleLess;
-  const variants = currentStyleBlock.variants;
-
-  // const chatRequest = async (user_input) => {
-  //   console.log(c.bgRed("INITIATING CHAT REQUEST"))
-  //   const res: ChatCompletion = await openai.chat.completions.create({
-  //     model: "gpt-3.5-turbo-0125",
-  //     messages: [
-  //       {
-  //         role: "system",
-  //         content: `
-  //         You are a css editor assistant. You only edit properties that the user asks for. The user provides many properties that aren't related to their query.
-  //         Its very important that you properly distinguish between the properties that are related to the user's query and the ones that are not.
-  //          `,
-  //       },
-  //       {
-  //         role: "user",
-  //         content: constructQuery(user_input, css, variants),
-  //       },
-  //     ],
-  //     tools: tools,
-  //     tool_choice: "required",
-  //   });
-  //   return res.choices[0].message?.tool_calls;
-  // };
-
   try {
     const results = await thread.invokeLLM(text);
 

@@ -154,7 +154,7 @@ export class Thread {
       console.time(c.greenBright("[APPLY-STYLES] - execution time : "));
 
       const res: ChatCompletion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-3.5-turbo-0125",
         response_format: { type: "json_object" },
         temperature: 0.1,
         messages: [
